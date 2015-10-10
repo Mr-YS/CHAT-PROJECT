@@ -6,6 +6,10 @@ var path = require('path');
 var app = express();
 // app.use(express.static(path.join(_dirname,'public')));
 
+app.get('/', function(req,res) {
+  res.send('hello World!');
+});
+
 var httpServer = http.createServer(app).listen(4000,function(req,res) {
   console.log('Socket IO server has been started');
 });
