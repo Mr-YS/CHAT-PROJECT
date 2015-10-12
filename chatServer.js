@@ -7,7 +7,7 @@ var app = express();
 // app.use(express.static(path.join(_dirname,'public')));
 
 app.get('/', function(req,res) {
-  res.send('hello World!');
+  res.sendFile(path.join(__dirname + '/index.html'));
 });
 
 var httpServer = http.createServer(app).listen(4000,function(req,res) {
