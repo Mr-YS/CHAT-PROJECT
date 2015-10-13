@@ -3,27 +3,30 @@
   <head>
     <title>ys</title>
     <script src = "http://61.78.82.157:4000/socket.io/socket.io.js"></script>
-    <script src = "./jquery-1.11.3.min.js"></script>
+    <script src = "http://61.78.82.157:4000/jquery-1.11.3.min.js"></script>
     <!--<script src =
-"//cdn.socket.io/socket.io/socket.io-1.3.7.js"></script>-->
+"//cdn.socket.io/socket.io/socket.io-1.3.7.js"></script>--!>
   </head>
   <body>
     <b>Send Message</b><p>
+    Name <input type = "text" id = "name"/>
     Message <input type = "text" id = "msgbox"/>
     <br>
     <span id="msgs"></span>
+    <span id="name"></span>
 
     <script type = "text/javascript">
       var socket = io.connect('http://61.78.82.157:4000');
       //var socket = io();
       $("#msgbox").keyup(function(event) {
         if(event.which == 13) {
-          socket.emit('fromclient',{msg:$('#msgbox').val()});
+          socket.emit('fromclient',{msg:$('#msgbox').val()},
+              {name:$('#name').val()});
           $('#msgbox').val("");
         }
       });
       socket.on('toclient',function(data) {
-        console.log(data.msg);
+        console.log(data.name+' : '+data.msg);
         $('#msgs').append(data.msg+'<BR>');
       });
     </script>
