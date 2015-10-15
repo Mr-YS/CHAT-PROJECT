@@ -18,7 +18,7 @@
     <script type = "text/javascript">
       var socket = io.connect('http://61.78.82.157:4000');
       //var socket = io();
-      $("#msgbox").keyup(function(event) {
+      $("#msgbox").keypress(function(event) {
         if(event.which == 13) {
           socket.emit('fromclient',{msg:$('#msgbox').val()},
               {name:$('#name').val()});
@@ -27,7 +27,7 @@
       });
       socket.on('toclient',function(data) {
         console.log(data.name+' : '+data.msg);
-        $('#msgs').append(data.msg+'<BR>');
+        $('#msgs').append(data.name+' : '+data.msg+'<BR>');
       });
     </script>
   </body>
