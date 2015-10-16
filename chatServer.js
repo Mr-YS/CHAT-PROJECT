@@ -17,7 +17,7 @@ var httpServer = http.createServer(app).listen(4000,function(req,res) {
 var io = require('socket.io').listen(httpServer);
 
 io.sockets.on('connection',function(socket) {
-  socket.emit('toclient',{msg:'welcome! From.AdminY$ XD'});
+  socket.emit('toclient',{msg:'welcome!'});
   socket.on('fromclient',function(data) {
     socket.broadcast.emit('toclient',data);
     socket.emit('toclient',data);
