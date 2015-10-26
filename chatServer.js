@@ -2,7 +2,7 @@ var express = require('express');
 var http = require('http');
 var path = require('path');
 var bodyParser = require('body-parser');
-var cookieParser = require('cookie-parser');
+var cookieParser = require('cookie-parser')();
 var session = require('express-session');
 var multer = require('multer');
 var upload = multer();
@@ -11,7 +11,7 @@ var app = express();
 app.use(express.static(path.join(__dirname + '/public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
-app.use(cookieParser());
+app.use(cookieParser);
 app.use(session({secret: 'qwertyuiop'
 }))
 
@@ -65,7 +65,21 @@ var httpServer = http.createServer(app).listen(4000, function(req,res) {
 
 var io = require('socket.io').listen(httpServer);
 
+io.use(function(socket,next) {
+  console.log(socket.id);
+  var req = socket.handshake;
+  var res = {};
+    console.log(socket.id);
+  cookieParser(req, res, function(err) {
+    if(err) {
+      return next(err);
+    }
+    session(req, res, next);
+  })
+})
+
 io.sockets.on('connection',function(socket) {
+  console.log('socket ' + socket.handshake.session);
   socket.emit('toclient',{msg:'welcome!'});
   socket.on('fromclient',function(data) {
     socket.broadcast.emit('toclient',data);
