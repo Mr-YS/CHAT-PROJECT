@@ -7,25 +7,28 @@
     <!--<script src ="//cdn.socket.io/socket.io/socket.io-1.3.7.js"></script>-->
   </head>
   <body>
-    <b>Send Message</b><p>
-    Name <input type = "text" id = "name"/>
-    Message <input type = "text" id = "msgbox"/>
-    <br>
+    <div style = "height:600px ; overflow-y:scroll" id ="msgbox">
     <span id="msgs"></span>
-    <span id="name"></span>
-
+    </div>
+    <!--span id="name"></span-->
+    <!-- Name <input type = "text" id = "name"/> -->
+    <b>SEND MSG</b> <input type = "text" id = "msg"/>
+    <br>
     <script type = "text/javascript">
       var socket = io.connect(':4000');
       //var socket = io();
-      $("#msgbox").keypress(function(event) {
+      $("#msg").keypress(function(event) {
         if(event.which == 13) {
-          socket.emit('fromclient',{msg:$('#msgbox').val(),name:$('#name').val()});
-          $('#msgbox').val("");
+          socket.emit('fromclient',{msg:$('#msg').val()});
+          $('#msg').val("");
+          // ,name:$('#name').val()
         }
       });
       socket.on('toclient',function(data) {
         console.log(data.name+' : '+data.msg);
         $('#msgs').append(data.name+' : '+data.msg+'<BR>');
+        var msgbox = $('#msgbox');
+        msgbox[0].scrollTop = msgbox[0].scrollHeight;
       });
     </script>
   </body>

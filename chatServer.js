@@ -3,17 +3,17 @@ var http = require('http');
 var path = require('path');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser')();
-var session = require('express-session');
+var session = require('express-session')({secret:'qwertyuiop'});
 var multer = require('multer');
 var upload = multer();
+var ios = require('socket.io-express-session');
 
 var app = express();
 app.use(express.static(path.join(__dirname + '/public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(cookieParser);
-app.use(session({secret: 'qwertyuiop'
-}))
+app.use(session);
 
 app.get('/',function(req,res) {
   console.log(req.session.username);
@@ -65,23 +65,13 @@ var httpServer = http.createServer(app).listen(4000, function(req,res) {
 
 var io = require('socket.io').listen(httpServer);
 
-io.use(function(socket,next) {
-  console.log(socket.id);
-  var req = socket.handshake;
-  var res = {};
-    console.log(socket.id);
-  cookieParser(req, res, function(err) {
-    if(err) {
-      return next(err);
-    }
-    session(req, res, next);
-  })
-})
+io.use(ios(session));
 
 io.sockets.on('connection',function(socket) {
-  console.log('socket ' + socket.handshake.session);
+  console.log('socket ' + socket.handshake.session.username);
   socket.emit('toclient',{msg:'welcome!'});
   socket.on('fromclient',function(data) {
+    data.name = socket.handshake.session.username;
     socket.broadcast.emit('toclient',data);
     socket.emit('toclient',data);
     console.log('Message from client : '+data.name+ ' : '+data.msg);
