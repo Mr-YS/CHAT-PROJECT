@@ -15,21 +15,23 @@ app.use(bodyParser.urlencoded({extended:true}));
 app.use(cookieParser);
 app.use(session);
 
+app.set('view engine','ejs');
+
 app.get('/',function(req,res) {
   console.log(req.session.username);
   if(req.session.username == undefined) {
     res.redirect('/login');
   }
   else
-    res.sendFile(path.join(__dirname + '/index.html'));
+  res.render('pages/index');
 });
 
 app.get('/login',function(req,res) {
-  res.sendFile(path.join(__dirname + '/login.html'));
+  res.render('pages/login');
 });
 
 app.get('/signup',function(req,res) {
-  res.sendFile(path.join(__dirname + '/signup.html'));
+  res.render('pages/signup');
 })
 
 app.get('/logout',function(req,res) {
@@ -68,14 +70,25 @@ var io = require('socket.io').listen(httpServer);
 io.use(ios(session));
 
 io.sockets.on('connection',function(socket) {
-  console.log('socket ' + socket.handshake.session.username);
-  socket.emit('toclient',{msg:'welcome!'});
-  socket.on('fromclient',function(data) {
-    data.name = socket.handshake.session.username;
-    socket.broadcast.emit('toclient',data);
-    socket.emit('toclient',data);
-    console.log('Message from client : '+data.name+ ' : '+data.msg);
-  })
+  var username = socket.handshake.session.username;
+  if(username == undefined) {
+    socket.emit('toclient',{name:"SYSTEM",msg:'YOU MUST LOGIN TO CONTINUE'})
+  }
+  else {
+    console.log('socket ' + username);
+    socket.emit('toclient',{name : "" , msg : "' "+username+ " '" + " Joined. "});
+    socket.on('fromclient',function(data) {
+      if(data.msg.charAt(0) == "/") {
+        commands(data.msg,socket);
+      }
+      else {
+        data.name = username;
+        socket.broadcast.emit('toclient',data);
+        socket.emit('toclient',data);
+      }
+      console.log('Message from client : '+data.name+ ' : '+data.msg);
+    })
+  }
 });
 
 var users = [
@@ -106,4 +119,32 @@ function signup(password, username) {
   }
   users.push({username: username, password: password});
   return true;
+}
+
+var commandList = {
+  help: ""
+};
+
+function commands(command, socket){
+  var data = {
+    name: '',
+    msg: ''
+  };
+  var tokens = command.split(' ');
+  switch(tokens[0]) {
+    case "/help" :
+    if(tokens.length == 1)
+      data.msg = commandList.help;
+    else{
+      switch(tokens[1]){
+        case "please" :
+          data.msg = "COMMANDS1";
+        break;
+      }
+    }
+    break;
+    default :
+      data.msg = command+" IS INVALID COMMAND";
+  }
+  socket.emit('toclient',data);
 }
