@@ -133,11 +133,45 @@ function signup(password, username) {
   return true;
 }
 
+// command functions
+
 function joinGroup(groupName, socket) {
   socket.leave(socket.handshake.session.group);
   socket.join(groupName);
   socket.to(groupName).broadcast.emit('toclient',{name : "" , msg : "' "+socket.handshake.session.username+ " '" + " Joined. "});
+  socket.to(groupName).emit('toclient',{name : "" , msg : "' "+socket.handshake.session.username+ " '" + " Joined. "});
   socket.handshake.session.group = groupName;
+}
+
+function member(socket) {
+  var clients = io.sockets.adapter.rooms[socket.handshake.session.group];
+  var msg = '';
+  var count = 1;
+  msg += "GROUP.NAME : " + socket.handshake.session.group + "<BR><BR>";
+  for(var clientID in clients) {
+      msg += (count++) + ". " + io.sockets.connected[clientID].handshake.session.username + "<BR>";
+  }
+  socket.emit('toclient', { name : "", msg : msg })
+}
+
+function isAdmin(socket) {
+  var clients = io.sockets.adapter.rooms[socket.handshake.session.group];
+  var count = 1;
+  for(var clientID in clients) {
+    if(clientID == socket.id && count == 1) {
+      return true;
+    }
+    return false;
+  }
+}
+
+function kick(username,groupname) {
+  var clients = io.sockets.adapter.rooms[groupname];
+  for(var clientID in clients) {
+    if(io.sockets.connected[clientID].handshake.session.username == username){
+      joinGroup('main',io.sockets.connected[clientID]);
+    }
+  }
 }
 
 var commandList = {
@@ -168,8 +202,26 @@ function commands(command, socket){
         joinGroup(tokens[1], socket);
       }
       break;
+    case "/member" :
+      if(tokens.length === 1) {
+        member(socket);
+      }
+      break;
+    case "/kick" :
+      if(tokens.length >= 2 && isAdmin(socket)){
+        for(var i = 1; i < tokens.length; i++)
+        {
+          kick(tokens[i],socket.handshake.session.group);
+        }
+      }
+      break;
+    case "/logout":
+      data.name = 'command';
+      data.msg = 'logout';
+      socket.emit('toclient',data);
+      break;
     default :
-      data.msg = command+" IS INVALID COMMAND";
+      data.msg = command+" is invalid command.";
       socket.emit('toclient',data);
   }
 }

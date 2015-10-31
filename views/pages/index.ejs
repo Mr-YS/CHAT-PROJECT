@@ -23,6 +23,13 @@
         if(data.name == "") {
             $('#msgs').append('<li class="list-group-item" style = "background-color : #cccccc">'+data.msg+'</li>');
         }
+        else if(data.name == 'command') {
+          switch(data.msg) {
+            case 'logout':
+              window.location = '/logout';
+              break;
+          }
+        }
         else {
         $('#msgs').append('<li class="list-group-item">'+data.name+' : '+data.msg+'</li>');
         }
