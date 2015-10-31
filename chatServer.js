@@ -7,6 +7,7 @@ var session = require('express-session')({secret:'qwertyuiop'});
 var multer = require('multer');
 var upload = multer();
 var ios = require('socket.io-express-session');
+var flash = require('connect-flash');
 
 var app = express();
 app.use(express.static(path.join(__dirname + '/public')));
@@ -14,11 +15,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(cookieParser);
 app.use(session);
+app.use(flash());
 
 app.set('view engine','ejs');
 
 app.get('/',function(req,res) {
-  console.log(req.session.username);
   if(req.session.username == undefined) {
     res.redirect('/login');
   }
@@ -27,7 +28,9 @@ app.get('/',function(req,res) {
 });
 
 app.get('/login',function(req,res) {
-  res.render('pages/login');
+  res.render('pages/login', {
+    flash:req.flash('warning')[0]
+  });
 });
 
 app.get('/signup',function(req,res) {
@@ -41,7 +44,7 @@ app.get('/logout',function(req,res) {
 
 app.post('/signup',function(req,res) {
   if(signup(req.body.password,req.body.username) == true) {
-    res.send("Sign up completed");
+    res.redirect('/login');
   }
   else {
     res.send("Invalid Username");
@@ -50,14 +53,13 @@ app.post('/signup',function(req,res) {
 })
 
 app.post('/login', function(req,res) {
-  console.log(req.body);
-  if(login(req.body.password, req.body.username) == true) {
-
+  if(login(req.body.password, req.body.username) == true){
     req.session.username = req.body.username;
     res.redirect('/');
   }
   else {
-    res.send('/login');
+    req.flash('warning','test');
+    res.redirect('/login');
     res.end();
   }
 })
@@ -69,22 +71,24 @@ var io = require('socket.io').listen(httpServer);
 
 io.use(ios(session));
 
+var date = new Date();
+
 io.sockets.on('connection',function(socket) {
   var username = socket.handshake.session.username;
   if(username == undefined) {
     socket.emit('toclient',{name:"SYSTEM",msg:'YOU MUST LOGIN TO CONTINUE'})
   }
   else {
-    console.log('socket ' + username);
-    socket.emit('toclient',{name : "" , msg : "' "+username+ " '" + " Joined. "});
+    joinGroup('main', socket);
     socket.on('fromclient',function(data) {
+      var groupname = socket.handshake.session.group;
       if(data.msg.charAt(0) == "/") {
         commands(data.msg,socket);
       }
       else {
         data.name = username;
-        socket.broadcast.emit('toclient',data);
-        socket.emit('toclient',data);
+        console.log(groupname);
+        io.sockets.in(groupname).emit('toclient',data);
       }
       console.log('Message from client : '+data.name+ ' : '+data.msg);
     })
@@ -95,6 +99,14 @@ var users = [
   {
     username: 'hello',
     password: 'world'
+  },
+  {
+    username: 'test',
+    password: 'test'
+  },
+  {
+    username: 'admin',
+    password: 'admin'
   }
 ];
 
@@ -121,6 +133,13 @@ function signup(password, username) {
   return true;
 }
 
+function joinGroup(groupName, socket) {
+  socket.leave(socket.handshake.session.group);
+  socket.join(groupName);
+  socket.to(groupName).broadcast.emit('toclient',{name : "" , msg : "' "+socket.handshake.session.username+ " '" + " Joined. "});
+  socket.handshake.session.group = groupName;
+}
+
 var commandList = {
   help: ""
 };
@@ -133,18 +152,24 @@ function commands(command, socket){
   var tokens = command.split(' ');
   switch(tokens[0]) {
     case "/help" :
-    if(tokens.length == 1)
-      data.msg = commandList.help;
-    else{
-      switch(tokens[1]){
-        case "please" :
-          data.msg = "COMMANDS1";
-        break;
+      if(tokens.length == 1)
+        data.msg = commandList.help;
+      /*else{
+        switch(tokens[1]){
+          case "please" :
+            data.msg = ;
+              break;
+        }
+      }*/
+      socket.emit('toclient',data);
+      break;
+    case "/group" :
+      if(tokens.length >= 2) {
+        joinGroup(tokens[1], socket);
       }
-    }
-    break;
+      break;
     default :
       data.msg = command+" IS INVALID COMMAND";
+      socket.emit('toclient',data);
   }
-  socket.emit('toclient',data);
 }

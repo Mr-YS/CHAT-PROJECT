@@ -1,5 +1,10 @@
 <% include ../partials/header %>
-    <form action="/login" method="post" class="form-horizontal col-xs-offset-3 col-xs-6">
+    <form action="/login" method="post" class="form-horizontal col-xs-offset-3 col-xs-8">
+  <!--    <div class="form-group">
+        <div class="col-xs-9">
+          <img src="septagonlogo_skyblue.png" alt="logo_skyblue">
+        </div>
+      </div> -->
       <div class="form-group">
         <div class="col-xs-9">
           <input type="text" name="username" class="form-control" placeholder="ID">
@@ -10,7 +15,15 @@
           <input type="password" name="password" class="form-control" placeholder="PW"/>
         </div>
       </div>
-      <button type="submit" class="btn btn-warning">SIGN IN</button>
-      <a href = "/signup" class="btn btn-info">SIGN UP</a>
+      <div class="form-group">
+        <div class="col-xs-9">
+          <% if(flash) { %>
+          <button type="submit" class="btn btn-danger col-xs-offset-0 col-xs-9">SIGN IN</button>
+          <% } else { %>
+          <button type="submit" class="btn btn-warning col-xs-offset-0 col-xs-9">SIGN IN</button>
+          <% } %>
+          <a href = "/signup" class="btn btn-info col-xs-offset-0 col-xs-3">SIGN UP</a>
+        </div>
+      </div>
     </form>
 <% include ../partials/footer %>
