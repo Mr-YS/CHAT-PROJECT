@@ -1,5 +1,6 @@
 <% include ../partials/header %>
-    <div style = "height:600px ; overflow-y:scroll" id ="msgbox">
+    <div id="list"></div>
+    <div id ="msgbox">
     <ul class = "list-group" id="msgs">
     </ul>
 
@@ -9,6 +10,9 @@
     <input type = "text" id = "msg" class = "form-control" placeholder="Send Message" />
     <br>
     <script type = "text/javascript">
+      $(document).ready(function() {
+        $('#list').draggable();
+      })
       var socket = io.connect(':4000');
       //var socket = io();
       $("#msg").keypress(function(event) {
@@ -23,18 +27,30 @@
         if(data.name == "") {
             $('#msgs').append('<li class="list-group-item" style = "background-color : #cccccc">'+data.msg+'</li>');
         }
-        else if(data.name == 'command') {
-          switch(data.msg) {
-            case 'logout':
-              window.location = '/logout';
-              break;
-          }
-        }
         else {
         $('#msgs').append('<li class="list-group-item">'+data.name+' : '+data.msg+'</li>');
         }
         var msgbox = $('#msgbox');
         msgbox[0].scrollTop = msgbox[0].scrollHeight;
+      });
+      socket.on('command', function(data) {
+        switch(data.name) {
+          case 'logout':
+            window.location = '/logout';
+            break;
+          case 'list':
+            $('#list').html('');
+            var tokens = data.msg.split(',');
+            for(var i in tokens) {
+              if(tokens[i] === "") {
+                break;
+              }
+              tokens[i] = tokens[i].split(':');
+              $('#list').append('<p>'+tokens[i][0]+' : '+tokens[i][1]+'</p>');
+            }
+            console.log(data.msg);
+            break;
+        }
       });
     </script>
 <% include ../partials/footer %>
