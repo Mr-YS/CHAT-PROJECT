@@ -8,6 +8,8 @@ var multer = require('multer');
 var upload = multer();
 var ios = require('socket.io-express-session');
 var flash = require('connect-flash');
+var User = require('./user.js');
+var Group = require('./group.js');
 
 var app = express();
 app.use(express.static(path.join(__dirname + '/public')));
@@ -43,7 +45,11 @@ app.get('/logout',function(req,res) {
 })
 
 app.get('/group/:groupname', function(req,res) {
-
+  if(req.session.username == undefined) {
+    res.redirect('/login');
+  }
+  else
+  res.render('pages/index');
 })
 
 app.post('/signup',function(req,res) {
@@ -71,7 +77,7 @@ var httpServer = http.createServer(app).listen(4000, function(req,res) {
   console.log('Socket IO server has been started');
 });
 
-var users = [
+var users1 = [
   {
     username: 'hello',
     password: 'world'
@@ -87,8 +93,18 @@ var users = [
 ];
 
 var groups = {
-  'main': []
+  main : new Group('main',undefined),
 };
+var users = {};
+
+function getGroupsMemberCount() {
+  var msg = '';
+  for(var name in groups) {
+    msg += name+":"+groups[name].members.length + ",";
+  }
+  console.log(msg);
+  io.emit('command', {name: 'list', msg: msg });
+}
 
 var io = require('socket.io').listen(httpServer);
 io.use(ios(session));
@@ -101,7 +117,22 @@ io.sockets.on('connection',function(socket) {
     socket.emit('toclient',{name:"SYSTEM",msg:'YOU MUST LOGIN TO CONTINUE!'})
   }
   else {
-    joinGroup('main', socket);
+    socket.on('connect1',function(data) {
+      var user = new User(username, socket, data.groupname);
+      users[socket.id] = user;
+      if(!groups.hasOwnProperty(data.groupname)) {
+        groups[data.groupname] = new Group(data.groupname, user);
+      }
+      groups[data.groupname].addUser(user, data.password);
+      getGroupsMemberCount();
+    });
+    socket.on('disconnect', function(data) {
+      var user = users[this.id];
+      if(user !== undefined) {
+        groups[user.group].removeUser(user);
+      }
+      getGroupsMemberCount();
+    })
     socket.on('fromclient',function(data) {
       var groupname = socket.handshake.session.group;
       if(data.msg.charAt(0) == "/") {
@@ -121,10 +152,10 @@ io.sockets.on('connection',function(socket) {
 });
 
 function login(password, username) {
-  for(var i=0;i<users.length;i++)
+  for(var i=0;i<users1.length;i++)
   {
-    if(users[i].username == username) {
-      if(users[i].password == password) {
+    if(users1[i].username == username) {
+      if(users1[i].password == password) {
         return true;
       }
     }
@@ -133,35 +164,17 @@ function login(password, username) {
 }
 
 function signup(password, username) {
-  for(var i=0;i<users.length;i++)
+  for(var i=0;i<users1.length;i++)
   {
-    if(users[i].username == username) {
+    if(users1[i].username == username) {
       return false;
     }
   }
-  users.push({username: username, password: password});
+  users1.push({username: username, password: password});
   return true;
 }
 
 // command functions
-
-function joinGroup(groupName, socket) {
-  if(groupName.length >= 16){
-    socket.emit('toclient',{name : "" , msg : " TOO LONG!"});
-    return;
-  }
-  if(groups[groupName] === undefined) {
-    groups[groupName] = [];
-  }
-  var index = groups[groupName].indexOf(socket.handshake.session.username);
-  if(index === -1) {
-    groups[groupName].push(socket.handshake.session.username);
-    socket.join(groupName);
-  }
-  socket.to(groupName).broadcast.emit('toclient',{name : "" , msg : "' "+socket.handshake.session.username+ " '" + " Joined. "});
-  socket.emit('toclient',{name : "" , msg : "' "+socket.handshake.session.username+ " '" + " Joined. "});
-  getGroupsMemberCount();
-}
 
 function leaveGroup(groupName, socket) {
   if(groups.groupName !== undefined) {
@@ -169,50 +182,6 @@ function leaveGroup(groupName, socket) {
     if(index !== -1) {
       socket.leave(groupName);
       joinGroup('main', socket);
-    }
-  }
-}
-
-function getGroupsMemberCount() {
-  var msg = '';
-  for(var name in groups) {
-    msg += name+":"+groups[name].length + ",";
-  }
-  io.emit('command', {name: 'list', msg: msg });
-}
-
-function member(socket) {
-  var clients = io.sockets.adapter.rooms[socket.handshake.session.group];
-  var msg = '';
-  var count = 1;
-  msg += "GROUP/CHANNEL-NAME : " + socket.handshake.session.group + "<BR><BR>";
-  for(var clientID in clients) {
-      msg += (count++) + ". " + io.sockets.connected[clientID].handshake.session.username + "<BR>";
-  }
-  socket.emit('toclient', { name : "", msg : msg })
-}
-
-function adminFinder(socket) {
-  var clients = io.sockets.adapter.rooms[socket.handshake.session.group];
-  msg += "The Admin of #"+ socket.handshake.session.group +" is "+ io.sockets.connected[0].handshake.session.username + "<BR>";
-}
-
-function isAdmin(socket) {
-  var clients = io.sockets.adapter.rooms[socket.handshake.session.group];
-  var count = 1;
-  for(var clientID in clients) {
-    if(clientID == socket.id && count == 1) {
-      return true;
-    }
-    return false;
-  }
-}
-
-function kick(username,groupname) {
-  var clients = io.sockets.adapter.rooms[groupname];
-  for(var clientID in clients) {
-    if(io.sockets.connected[clientID].handshake.session.username == username){
-      joinGroup('main',io.sockets.connected[clientID]);
     }
   }
 }
@@ -234,7 +203,7 @@ function lennyFace(socket, number) {
   ]
   console.log(number);
   if(number >= lennyArr.length) {
-    socket.to(socket.handshake.session.group).emit('toclient',{name : "" , msg : "Requested emoticon is not available."});
+    socket.to(socket.handshake.session.group).emit('toclient',{name : "" , msg : "Requested lennyFace is not available."});
   }
   else {
     io.sockets.in(socket.handshake.session.group).emit('toclient',{name : socket.handshake.session.username , msg : lennyArr[number-1]});
@@ -248,8 +217,7 @@ function location(socket) {
 }
 
 var commandList = {
-  help: "/group [groupname] - Joining Group/Channel <BR>/"
-
+  help: "/group [groupname] , #[groupname] -  Join the Group/Channel <BR>/member , /who - Show The List of Current Users in the Channel. <BR>/quit , /exit , /leave , /escape , /esc , /q - Leave the Channel <BR>/logout , /signout, /lg - Logout<BR>/location , /loc , /cd - Your Current Location<BR>/lenny [number] , /lennyFace [number] , /lol [number] - Lenny Emoticon "
 };
 
 function hashCommands(command, socket) {
@@ -276,10 +244,13 @@ function commands(command, socket) {
       break;
     case "/group" :
       if(tokens.length >= 2) {
-        joinGroup(tokens[1], socket);
+        data.name = 'group';
+        data.msg = tokens[1];
+        socket.emit("command",data);
       }
       break;
-    case "/member" :
+    case "/member":
+    case "/who":
       if(tokens.length === 1) {
         member(socket);
       }
@@ -298,23 +269,28 @@ function commands(command, socket) {
     case "/quit" :
     case "/exit" :
     case "/escape" :
+    case "/leave" :
+    case "/esc" :
+    case "/q" :
       if(tokens.length === 1) {
         leaveGroup("main", socket);
       }
       break;
     case "/logout":
     case "/signout":
+    case "/lg":
       data.name = 'logout';
       data.msg = '';
       socket.emit("command",data);
       break;
     case "/location":
     case "/loc":
-    case "/whereAmI":
+    case "/cd":
       location(socket);
       break;
     case "/lenny":
     case "/lennyface":
+    case "/lol":
       lennyFace(socket, tokens[1]);
       break;
     default :

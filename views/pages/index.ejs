@@ -14,6 +14,10 @@
         $('#list').draggable();
       })
       var socket = io.connect(':4000');
+      var tokens = window.location.href.split('/');
+      socket.emit('connect1', {
+        groupname: tokens.length===5 ? tokens[4] : 'main',
+      });
       //var socket = io();
       $("#msg").keypress(function(event) {
         if(event.which == 13) {
@@ -38,7 +42,11 @@
           case 'logout':
             window.location = '/logout';
             break;
+          case 'group':
+            window.open('/group/'+data.msg);
+            break;
           case 'list':
+          console.log(data.msg);
             $('#list').html('');
             var tokens = data.msg.split(',');
             for(var i in tokens) {
