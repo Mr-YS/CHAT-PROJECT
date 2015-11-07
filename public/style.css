@@ -1,11 +1,4 @@
-#list {
-  position: absolute;
-  top: 0px;
-  right: 0px;
-  z-index: 10;
-  background-color: #cccccc;
-  opacity: 0.5;
-  padding : 10px;
+html {
   font-family: Ubuntu;
   font-size: 25px;
 }

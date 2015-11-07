@@ -1,29 +1,24 @@
 <% include ../partials/header %>
-    <form action="/login" method="post" class="form-horizontal col-xs-offset-3 col-xs-8">
-  <!--    <div class="form-group">
-        <div class="col-xs-9">
-          <img src="septagonlogo_skyblue.png" alt="logo_skyblue">
-        </div>
-      </div> -->
-      <div class="form-group">
-        <div class="col-xs-9">
-          <input type="text" name="username" class="form-control" placeholder="ID">
+  <div class="row">
+    <form class="col s12" action="/login" method="post">
+      <div class="row">
+        <div class="input-field col s12">
+	  <input name="username" id="username" type="text" class="validate">
+          <label style="color:#ffc107" for="username">Username</label>
         </div>
       </div>
-      <div class="form-group">
-        <div class="col-xs-9">
-          <input type="password" name="password" class="form-control" placeholder="PW"/>
+      <div class="row">
+        <div class="input-field col s12">
+          <input name="password" id="password" type="password" class="validate">
+          <label style="color:#ffc107" for="password">Password</label>
         </div>
       </div>
-      <div class="form-group">
-        <div class="col-xs-9">
-          <% if(flash) { %>
-          <button type="submit" class="btn btn-danger col-xs-offset-0 col-xs-9">SIGN IN</button>
-          <% } else { %>
-          <button type="submit" class="btn btn-warning col-xs-offset-0 col-xs-9">SIGN IN</button>
-          <% } %>
-          <a href = "/signup" class="btn btn-info col-xs-offset-0 col-xs-3">SIGN UP</a>
-        </div>
-      </div>
+      <button class="orange lighten-2 input-field col s5 btn waves-effect waves-light" type="submit" name="action"> Sign in
+	<i class="material-icons right">send</i>
+      </button>
+      <a class="btn light-blue lighten-4 input-field col s5 offset-s2 waves-effect waves-dark" href="/signup">SIGN UP
+      	<i class="material-icons right">create</i>
+      </a>
     </form>
+  </div>
 <% include ../partials/footer %>
