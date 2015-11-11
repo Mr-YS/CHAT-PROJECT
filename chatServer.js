@@ -192,9 +192,10 @@ io.sockets.on('connection',function(socket) {
 			else {
 				data.name = username;
 				socket.to(groupname).broadcast.emit('toclient',data);
-				socket.emit('toclient',data);
+				//socket.broadcast.emit('toclient',data);
+				//socket.emit('toclient',data);
 			}
-			console.log('Message from client : '+data.name+ ' : '+data.msg);
+			console.log('Messiage from client : '+data.name+ ' : '+data.msg);
 		})
 	}
 });
