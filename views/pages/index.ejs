@@ -2,6 +2,10 @@
     <div id="list"></div>
     <div id ="msgbox">
     <ul class = "list-group" id="msgs">
+<% msgs.forEach(function(msg) {
+%>
+	<li class="list-group-item"><%=msg.username %> : <%=msg.msg %></li>	
+<% }); %>
     </ul>
 
     </div>
@@ -10,9 +14,9 @@
     <input type = "text" id = "msg" class = "form-control" placeholder="Send Message" />
     <br>
     <script type = "text/javascript">
-      $(document).ready(function() {
+     /*   $(document).ready(function() {
         $('#list').draggable();
-      })
+      }) */
       var socket = io.connect(':4000');
       var tokens = window.location.href.split('/');
       socket.emit('connect1', {
@@ -29,10 +33,16 @@
       socket.on('toclient',function(data) {
         console.log(data.name+' : '+data.msg);
         if(data.name == "") {
-            $('#msgs').append('<li class="list-group-item" style = "background-color : #cccccc">'+data.msg+'</li>');
+            $('#msgs').append('<li class="list-group-item" style = "background-color : #FFA500">'+data.msg+'</li>');
         }
         else {
-        $('#msgs').append('<li class="list-group-item">'+data.name+' : '+data.msg+'</li>');
+			if(data.msg.length > 1 && data.msg.length < 84) { 
+				$('#msgs').append('<li class="list-group-item">'+data.name+' : '+data.msg+'</li>');
+				Materialize.toast(data.name+' : '+data.msg,3000,'rounded');
+			}
+			else if(data.msg.length > 1) {
+				user.socket.emit('Too Short!');
+			}
         }
         var msgbox = $('#msgbox');
         msgbox[0].scrollTop = msgbox[0].scrollHeight;
@@ -49,13 +59,13 @@
           console.log(data.msg);
             $('#list').html('');
             var tokens = data.msg.split(',');
-            for(var i in tokens) {
+    /*        for(var i in tokens) {
               if(tokens[i] === "") {
                 break;
               }
               tokens[i] = tokens[i].split(':');
               $('#list').append('<p>'+tokens[i][0]+' : '+tokens[i][1]+'</p>');
-            }
+            }*/
             console.log(data.msg);
             break;
         }

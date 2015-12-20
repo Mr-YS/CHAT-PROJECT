@@ -1,3 +1,4 @@
+
 function Group(name, groupAdmin) {
   this.name = name;
   this.groupAdmin = groupAdmin;
@@ -38,6 +39,7 @@ Group.prototype.sendMessage = function(user, msg) {
       user.socket.to(this.name).broadcast.emit('toclient',{name : user.name , msg : msg});
       user.socket.emit('toclient',{name : user.name , msg : msg});
   }
+
 }
 
 Group.prototype.memberList = function(socket) {

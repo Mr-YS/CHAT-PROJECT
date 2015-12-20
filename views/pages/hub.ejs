@@ -1,5 +1,7 @@
 <% include ../partials/header %>
 	<form class="col s12" action="/hub" method="post">
+<!--		<ul class="collapsible popout" data-collapsible="accordion"> -->
+		</ul>
 		<div class="input-field col s12">
 			<select name="groupname">
 		<% for(var i = 0; i < groups.length; ++i) { %>
@@ -13,7 +15,6 @@
 			<input type="password" name="password" class="form-control" />
 		</div>
 		<button type="submit" class="btn input-field orange lighten-3 col s6 offset-s3 waves-effect waves-light">Join
-			<i class="material-icons right">flight takeoff</i>
 		</button>
 	</form>
 	<script>

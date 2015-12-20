@@ -9,18 +9,12 @@ var upload = multer();
 var ios = require('socket.io-express-session');
 var flash = require('connect-flash');
 var fs = require('fs');
-var knex = require('knex')({
-	client: 'mysql',
-	connection: {
-		host: 'localhost',
-		user: 'chatProject',
-		password: fs.readFileSync(__dirname + '/.password').toString().trim(),
-		database: 'chatProject'
-	}
-});
+var config = require('./config.js');
+var knex = require('knex')(config);
 
 var User = require('./user.js');
 var Group = require('./group.js');
+var Log = new (require('./log.js'))();
 
 var crypto = require('crypto');
 
@@ -76,7 +70,11 @@ app.get('/group/:groupname', function(req,res) {
 		res.redirect('/login');
 	}
 	else {
-		res.render('pages/index');
+		Log.getMessage(req.session.groupID, function(rows) {
+			res.render('pages/index', {
+				msgs: rows
+			});
+		});
 	}
 })
 
@@ -96,8 +94,7 @@ app.post('/signup',function(req,res) {
 			});
 		}
 		else {
-			res.send("Invalid Username");
-			res.end();
+			res.redirect('/signhup');
 		}
 	});
 })
@@ -111,6 +108,7 @@ app.post('/login', function(req,res) {
 		var password = hmac.read();
 		if(rows.length === 1 && rows[0].password === password) {
 			req.session.username = req.body.username;
+			req.session.userID = rows[0].id;
 			res.redirect('/hub');
 		}
 		else {
@@ -125,6 +123,9 @@ app.post('/hub', function(req, res) {
 	knex('group').where('groupname', req.body.groupname).then(function(rows) {
 		if(rows.length === 1) {
 			if(rows[0].password == req.body.password) {
+				console.log(rows[0].groupname);
+				req.session.groupname = rows[0].groupname;
+				req.session.groupID = rows[0].id;
 				res.redirect('/group/' + req.body.groupname);
 			}
 			else {
@@ -162,7 +163,7 @@ var date = new Date();
 io.sockets.on('connection',function(socket) {
 	var username = socket.handshake.session.username;
 	if(username == undefined) {
-		socket.emit('toclient',{name:"SYSTEM",msg:'YOU MUST LOGIN TO CONTINUE!'})
+		socket.emit('toclient',{name:"SYSTEM",msg:'YOU MUST RELOGIN TO CONTINUE!'})
 	}
 	else {
 		socket.on('connect1',function(data) {
@@ -173,6 +174,7 @@ io.sockets.on('connection',function(socket) {
 			}
 			groups[data.groupname].addUser(user, data.password);
 			getGroupsMemberCount();
+			socket.handshake.session.group = data.groupname;
 		});
 		socket.on('disconnect', function(data) {
 			var user = users[this.id];
@@ -182,7 +184,11 @@ io.sockets.on('connection',function(socket) {
 			getGroupsMemberCount();
 		})
 		socket.on('fromclient',function(data) {
+			console.log(socket.handshake.session);
 			var groupname = socket.handshake.session.group;
+			var userID = socket.handshake.session.userID;
+			var groupID = socket.handshake.session.groupID;
+
 			if(data.msg.charAt(0) == "/") {
 				commands(data.msg,socket);
 			}
@@ -191,11 +197,13 @@ io.sockets.on('connection',function(socket) {
 			}
 			else {
 				data.name = username;
-				socket.to(groupname).broadcast.emit('toclient',data);
+				socket.join(groupname);
+				Log.addMessage(userID,groupID,data.msg);
+				io.sockets.in(groupname).emit('toclient',data);
 				//socket.broadcast.emit('toclient',data);
 				//socket.emit('toclient',data);
 			}
-			console.log('Messiage from client : '+data.name+ ' : '+data.msg);
+			console.log('Message from client : ['+groupname+']'+data.name+ ' : '+data.msg);
 		})
 	}
 });
@@ -203,6 +211,9 @@ io.sockets.on('connection',function(socket) {
 // command functions
 
 function leaveGroup(groupName, socket) {
+	Group.removeUser(socket.handshake.session.username);
+	window.close();
+	/*
 	if(groups.groupName !== undefined) {
 		var index = groups.groupName.indexOf(socket.handshake.session.username);
 		if(index !== -1) {
@@ -210,6 +221,7 @@ function leaveGroup(groupName, socket) {
 			joinGroup('main', socket);
 		}
 	}
+	*/
 }
 
 function lennyFace(socket, number) {
@@ -243,7 +255,7 @@ function location(socket) {
 }
 
 var commandList = {
-	help: "/group [groupname] , #[groupname] -	Join the Group/Channel <BR>/member , /who - Show The List of Current Users in the Channel. <BR>/quit , /exit , /leave , /escape , /esc , /q - Leave the Channel <BR>/logout , /signout, /lg - Logout<BR>/location , /loc , /cd - Your Current Location<BR>/lenny [number] , /lennyFace [number] , /lol [number] - Lenny Emoticon "
+	help : " THIS COMMAND IS GOING TO BE FIXED SOON. SORRY. "
 };
 
 function hashCommands(command, socket) {
@@ -319,6 +331,9 @@ function commands(command, socket) {
 		case "/lol":
 			lennyFace(socket, tokens[1]);
 			break;
+		case "/opop":
+			if(tokens.length === 1) {
+			}
 		default :
 			data.msg = command+" is invalid command.";
 			socket.emit('toclient',data);
