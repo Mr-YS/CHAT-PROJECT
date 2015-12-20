@@ -1,9 +1,30 @@
+'use strict';
+
+var config = require('../config.js');
+var knex = require('knex')(config);
+var crypto = require('crypto');
 
 function Group(name, groupAdmin) {
   this.name = name;
   this.groupAdmin = groupAdmin;
   this.password = undefined;
   this.members = [];
+}
+
+Group.exists = function(groupname, password, callback) {
+	if(typeof password === 'function') {
+                callback = password;
+                password = undefined;
+        }
+        knex('group').where('groupname', groupname)
+        .then(function(rows) {
+                if(rows.length === 1) {
+                	callback(true, rows[0].id);
+                }
+		else {
+			callback(false);
+		}
+	})
 }
 
 Group.prototype.addUser = function(user, password) {

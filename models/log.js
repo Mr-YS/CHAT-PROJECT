@@ -1,4 +1,4 @@
-var config = require('./config.js');
+var config = require('../config.js');
 var knex = require('knex')(config);
 
 function Log() {
@@ -11,13 +11,14 @@ function Log() {
 	}).return()
 }
 
-Log.prototype.addMessage = function(userID, groupID, msg) {
+Log.addMessage = function(userID, groupID, msg) {
 	knex('log').insert({userID : userID , groupID : groupID , msg : msg}).return()
 }
 
-Log.prototype.getMessage = function(groupID, callback) {
+Log.getMessage = function(groupID, callback) {
 	knex('log').innerJoin('user', 'user.id', 'log.userID').where('groupID', groupID).then(function(rows) {
 		callback(rows);
 	});
 }
+
 module.exports = Log;
