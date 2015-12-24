@@ -1,74 +1,88 @@
 <% include ../partials/header %>
-    <div id="list"></div>
-    <div id ="msgbox">
-    <ul class = "list-group" id="msgs">
-<% msgs.forEach(function(msg) {
-%>
-	<li class="list-group-item"><%=msg.username %> : <%=msg.msg %></li>	
-<% }); %>
-    </ul>
+		<div class="col s2">
+			<div class="collection" id="channel">
+    				<a href="#" class="collection-item">general</a>
+				<a href="#" class="collection-item">hub</a>
+  			</div>
+		</div>
+		<div class="col s9">
+			<div id ="msgbox">
+			<ul class = "list-group" id="msgs"></ul>
+			</div>
+			<input type = "text" id = "msg" class = "form-control" placeholder="Send Message" />
+		</div>
 
-    </div>
-    <!--span id="name"></span-->
-    <!-- Name <input type = "text" id = "name"/> -->
-    <input type = "text" id = "msg" class = "form-control" placeholder="Send Message" />
-    <br>
-    <script type = "text/javascript">
-     /*   $(document).ready(function() {
-        $('#list').draggable();
-      }) */
-      var socket = io.connect(':4000');
-      var tokens = window.location.href.split('/');
-      socket.emit('connect1', {
-        groupname: tokens.length===5 ? tokens[4] : 'main',
-      });
-      //var socket = io();
-      $("#msg").keypress(function(event) {
-        if(event.which == 13) {
-          socket.emit('fromclient',{msg:$('#msg').val()});
-          $('#msg').val("");
-          // ,name:$('#name').val()
-        }
-      });
-      socket.on('toclient',function(data) {
-        console.log(data.name+' : '+data.msg);
-        if(data.name == "") {
-            $('#msgs').append('<li class="list-group-item" style = "background-color : #FFA500">'+data.msg+'</li>');
-        }
-        else {
-			if(data.msg.length > 1 && data.msg.length < 84) { 
-				$('#msgs').append('<li class="list-group-item">'+data.name+' : '+data.msg+'</li>');
-				Materialize.toast(data.name+' : '+data.msg,3000,'rounded');
+		<script type = "text/javascript">
+		 /*	 $(document).ready(function() {
+				$('#list').draggable();
+			}) */
+			var socket = io.connect(':4000');
+			//var socket = io();
+			var channel = 'hub';
+			getMessages();
+			$("#channel .collection-item").click( function() {
+				channel = $(this).text();
+				getMessages();
+			})
+			$("#msg").keypress(function(event) {
+				if(event.which == 13) {
+					var msg = $('#msg').val();
+					if(msg.length <= 1 || msg.length >= 84){
+						Materialize.toast('싫어',3000,'rounded');
+					}
+					else{
+						socket.emit('fromclient',{msg:msg, channel:channel});
+					}
+					$('#msg').val("");
+					// ,name:$('#name').val()
+				}
+			});
+			socket.on('toclient',function(data) {
+				console.log(data.name+' : '+data.msg);
+				if(data.name == "") {
+					$('#msgs').append('<li class="list-group-item" style = "background-color : #FFA500">'+data.msg+'</li>');
+				}
+				else {
+					console.log(data.channel);
+					if(data.channel == channel) {
+						$('#msgs').append('<li class="list-group-item">'+data.name+' : '+data.msg+'</li>');
+					}
+					else{}
+				}
+				var msgbox = $('#msgbox');
+				msgbox[0].scrollTop = msgbox[0].scrollHeight;
+			});
+			socket.on('command', function(data) {
+				switch(data.name) {
+					case 'logout':
+						window.location = '/logout';
+						break;
+					case 'group':
+						window.open('/group/'+data.msg);
+						break;
+					case 'list':
+					console.log(data.msg);
+						$('#list').html('');
+						var tokens = data.msg.split(',');
+		/*				for(var i in tokens) {
+							if(tokens[i] === "") {
+								break;
+							}
+							tokens[i] = tokens[i].split(':');
+							$('#list').append('<p>'+tokens[i][0]+' : '+tokens[i][1]+'</p>');
+						}*/
+						console.log(data.msg);
+						break;
+				}
+			});
+			
+			function getMessages() {
+				$.get('/log/'+channel, function(data) {
+					data.forEach(function(msg) {
+						$('#msgs').append('<li class="list-group-item">'+msg.username+' : '+msg.msg+'</li>');
+					});
+					$('#msgbox').scrollTop($('#msgbox')[0].scrollHeight);
+				});
 			}
-			else if(data.msg.length > 1) {
-				user.socket.emit('Too Short!');
-			}
-        }
-        var msgbox = $('#msgbox');
-        msgbox[0].scrollTop = msgbox[0].scrollHeight;
-      });
-      socket.on('command', function(data) {
-        switch(data.name) {
-          case 'logout':
-            window.location = '/logout';
-            break;
-          case 'group':
-            window.open('/group/'+data.msg);
-            break;
-          case 'list':
-          console.log(data.msg);
-            $('#list').html('');
-            var tokens = data.msg.split(',');
-    /*        for(var i in tokens) {
-              if(tokens[i] === "") {
-                break;
-              }
-              tokens[i] = tokens[i].split(':');
-              $('#list').append('<p>'+tokens[i][0]+' : '+tokens[i][1]+'</p>');
-            }*/
-            console.log(data.msg);
-            break;
-        }
-      });
-    </script>
+		</script>
 <% include ../partials/footer %>

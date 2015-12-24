@@ -53,10 +53,8 @@ router.get('/group/:groupname', function(req,res) {
 		res.redirect('/login');
 	}
 	else {
-		Log.getMessage(req.session.groupID, function(rows) {
-			res.render('pages/index', {
-				msgs: rows
-			});
+		Log.getMessage(req.session.groupID, 'hub' , function(rows) {
+			res.render('pages/index');
 		});
 	}
 });
@@ -102,6 +100,13 @@ router.post('/hub', function(req, res) {
 		}
 	});
 });
+
+router.get('/log/:channel', function(req, res) {
+	Log.getMessage(req.session.groupID, req.params.channel , function(rows) {
+                        res.json(rows)
+        });	
+});
+
 
 module.exports = router;
 

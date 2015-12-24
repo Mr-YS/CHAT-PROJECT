@@ -28,16 +28,6 @@ module.exports = function(httpServer, session) {
 			socket.emit('toclient',{name:"SYSTEM",msg:'YOU MUST RELOGIN TO CONTINUE!'})
 		}
 		else {
-			socket.on('connect1',function(data) {
-				var user = new User(username, socket, data.groupname);
-				users[socket.id] = user;
-				if(!groups.hasOwnProperty(data.groupname)) {
-					groups[data.groupname] = new Group(data.groupname, user);
-				}
-				groups[data.groupname].addUser(user, data.password);
-				getGroupsMemberCount();
-				socket.handshake.session.group = data.groupname;
-			});
 			socket.on('disconnect', function(data) {
 				var user = users[this.id];
 				if(user !== undefined) {
@@ -50,7 +40,7 @@ module.exports = function(httpServer, session) {
 				var groupname = socket.handshake.session.group;
 				var userID = socket.handshake.session.userID;
 				var groupID = socket.handshake.session.groupID;
-
+				
 				if(data.msg.charAt(0) == "/") {
 					commands(data.msg,socket);
 				}
@@ -60,7 +50,7 @@ module.exports = function(httpServer, session) {
 				else {
 					data.name = username;
 					socket.join(groupname);
-					Log.addMessage(userID,groupID,data.msg);
+					Log.addMessage(userID,groupID, data.channel, data.msg);
 					io.sockets.in(groupname).emit('toclient',data);
 					//socket.broadcast.emit('toclient',data);
 					//socket.emit('toclient',data);
