@@ -1,8 +1,19 @@
 <% include ../partials/header %>
 		<div class="col s2">
+			<a class="modal-trigger btn-floating btn-large waves-effect waves-light red" id="addChannel" href="#modal1"><i class="material-icons">add</i></a>
+		<div id="modal1" class="modal modal-fixed-footer">
+			<div class="modal-content">
+				<h4>Create New Channel</h4>
+				<div class="input-field">
+					<input placeholder="Channel Name" id="channelName" type="text" />
+				</div>
+			</div>
+				<div class="modal-footer">
+					<a href="#!" class="modal-action modal-close waves-effect waves-red btn-flat " id="cancel">Cancel</a>
+					<a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat " id="create">Create</a>
+				</div>
+			</div>
 			<div class="collection" id="channel">
-    				<a href="#" class="collection-item">general</a>
-				<a href="#" class="collection-item">hub</a>
   			</div>
 		</div>
 		<div class="col s9">
@@ -11,7 +22,7 @@
 			</div>
 			<input type = "text" id = "msg" class = "form-control" placeholder="Send Message" />
 		</div>
-
+		
 		<script type = "text/javascript">
 		 /*	 $(document).ready(function() {
 				$('#list').draggable();
@@ -19,14 +30,27 @@
 			var socket = io.connect(':4000');
 			//var socket = io();
 			var channel = 'hub';
+			updateChannelList();
 			getMessages();
-			$("#channel .collection-item").click( function() {
-				channel = $(this).text();
+			$('.modal-trigger').leanModal();
+			$(document).on('click', '#channel .collection-item', function() {
+				channel = $(this).attr('id');
+				$('#'+channel+' .badge').html("");
+				$('#'+channel+' .badge').hide();
 				getMessages();
 			})
+			$('#create').click(function() {
+				var channelname = $('#channelName').val();
+				socket.emit('createChannel', {
+					channelname: channelname
+				});
+				channel = channelname;
+				getMessages();	
+				$('#modal1').closeModal();
+			});
 			$("#msg").keypress(function(event) {
 				if(event.which == 13) {
-					var msg = $('#msg').val();
+					var msg = $('#msg').val().trim();
 					if(msg.length <= 1 || msg.length >= 84){
 						Materialize.toast('싫어',3000,'rounded');
 					}
@@ -36,6 +60,9 @@
 					$('#msg').val("");
 					// ,name:$('#name').val()
 				}
+			});
+			socket.on('channelList', function() {
+				updateChannelList();
 			});
 			socket.on('toclient',function(data) {
 				console.log(data.name+' : '+data.msg);
@@ -47,7 +74,20 @@
 					if(data.channel == channel) {
 						$('#msgs').append('<li class="list-group-item">'+data.name+' : '+data.msg+'</li>');
 					}
-					else{}
+					else{
+						var badge = $('#'+data.channel+' .badge').html();
+						if(badge === undefined) { 
+							badge = 0;	
+						}
+						else if(badge === "") {
+							badge = 0;
+						}
+						badge = parseInt(badge);
+						badge++;
+						$('#'+data.channel+' .badge').css('display', 'inline');
+						console.log(badge);
+						$('#'+data.channel+' .badge').html(badge);
+					}
 				}
 				var msgbox = $('#msgbox');
 				msgbox[0].scrollTop = msgbox[0].scrollHeight;
@@ -78,11 +118,21 @@
 			
 			function getMessages() {
 				$.get('/log/'+channel, function(data) {
+					$('#msgs').html('');
 					data.forEach(function(msg) {
 						$('#msgs').append('<li class="list-group-item">'+msg.username+' : '+msg.msg+'</li>');
 					});
 					$('#msgbox').scrollTop($('#msgbox')[0].scrollHeight);
 				});
+			}
+			
+			function updateChannelList() {
+				$.get('/channel/list', function(rows) {
+					$('#channel').html('');
+					rows.forEach(function(channel) {
+						$('#channel').append('<a href="#" class="collection-item" id="'+channel.channelname+'">'+channel.channelname+'<span class="new badge" style="display : none;"></span></a>');
+					})
+				})
 			}
 		</script>
 <% include ../partials/footer %>

@@ -8,6 +8,7 @@ var crypto = require('crypto');
 var User = require('./models/user.js');
 var Group = require('./models/group.js');
 var Log = require('./models/log.js');
+var Channel = require('./models/channel.js');
 
 var router = express.Router();
 
@@ -103,10 +104,21 @@ router.post('/hub', function(req, res) {
 
 router.get('/log/:channel', function(req, res) {
 	Log.getMessage(req.session.groupID, req.params.channel , function(rows) {
-                        res.json(rows)
+		res.json(rows)
         });	
 });
 
+router.get('/channel/list', function(req, res) {
+	Channel.channelList(req.session.groupID, function(rows) {
+		res.json(rows)
+	});
+});
+
+router.post('/channel/create', function(req, res) {
+	Channel.createChannel(req.body.channelname, req.session.groupID, function(success) {
+		res.json(success)
+	});
+});
 
 module.exports = router;
 
