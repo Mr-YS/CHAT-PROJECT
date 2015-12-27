@@ -40,13 +40,18 @@
 				getMessages();
 			})
 			$('#create').click(function() {
-				var channelname = $('#channelName').val();
-				socket.emit('createChannel', {
-					channelname: channelname
-				});
-				channel = channelname;
-				getMessages();	
-				$('#modal1').closeModal();
+				var channelname = $('#channelName').val().trim();
+				$('#channelName').val('');
+				if(channelname.length !== 0) {
+					socket.emit('createChannel', {
+						channelname: channelname
+					});
+					channel = channelname;
+					getMessages();	
+					$('#modal1').closeModal();
+				}
+				else {
+				}
 			});
 			$("#msg").keypress(function(event) {
 				if(event.which == 13) {

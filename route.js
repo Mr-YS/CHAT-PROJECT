@@ -114,11 +114,5 @@ router.get('/channel/list', function(req, res) {
 	});
 });
 
-router.post('/channel/create', function(req, res) {
-	Channel.createChannel(req.body.channelname, req.session.groupID, function(success) {
-		res.json(success)
-	});
-});
-
 module.exports = router;
 
