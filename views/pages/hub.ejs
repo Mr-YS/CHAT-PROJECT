@@ -1,25 +1,45 @@
 <% include ../partials/header %>
-	<form class="col s12" action="/hub" method="post">
-<!--		<ul class="collapsible popout" data-collapsible="accordion"> -->
-		</ul>
-		<div class="input-field col s12">
-			<select name="groupname">
+	<div class="col s2">
+		<a class="modal-trigger btn-floating btn-large waves-effect waves-light black" id="createGroup" href="#modal1"><i class="material-icons">add</i></a>	
+	</div>
+	<div id="modal1" class="modal modal-fixed-footer">
+		<div class="modal-content">
+			<h4>Create New Group</h4>
+			<div class="input-field">
+				<input placeholder="group-name" id="groupName" type="text" />
+			</div>
+		</div>
+		<div class="modal-footer">
+			<a href="#!" class="modal-action modal-close waves-effect waves-red btn-flat " id="cancel">Cancel</a>
+			<a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat " id="create">Create</a>
+		</div>
+	</div>
+
+	<ul class="col s12">
 		<% for(var i = 0; i < groups.length; ++i) { %>
-			<option value="<%=groups[i].groupname %>"><%=groups[i].groupname %></option>
+			<li><a href="/group/<%=groups[i].groupname %>"><%=groups[i].groupname %></a></li>
 		<% } %>
-			</select>
-			<label for="groupname">Group Name</label>
-		</div>
-		<div class="input-field col s12">
-			<label for="password">Password</label>
-			<input type="password" name="password" class="form-control" />
-		</div>
-		<button type="submit" class="btn input-field orange lighten-3 col s6 offset-s3 waves-effect waves-light">Join
-		</button>
-	</form>
-	<script>
-		$(document).ready(function() {
-			$('select').material_select();
-		});
+	</ul>
+	<script type = "text/javascript">
+		$('.modal-trigger').leanModal();
+		/*$(document).on('click', '#group .collection-item', function() {
+			group = $(this).attr('id');
+			
+		})*/
+		$('#create').click(function() {
+			var groupname = $('#groupName').val().trim();
+			$('#groupName').val('');
+			if(groupname.length !== 0) {
+				$.post('/group/create', {groupname : groupname}, function(success) {
+					if(success) {
+						window.location.href = '/group/'+groupname;
+					}
+					else {
+						alert('Invalid group-name');
+					}
+				}) 
+			}
+		})
+		$('select').material_select();
 	</script>
 <% include ../partials/footer %>

@@ -54,8 +54,17 @@ router.get('/group/:groupname', function(req,res) {
 		res.redirect('/login');
 	}
 	else {
-		Log.getMessage(req.session.groupID, 'hub' , function(rows) {
-			res.render('pages/index');
+		req.session.groupname = req.params.groupname;
+		Group.getID(req.session.groupname, function(ID) {
+			if(ID === -1) {
+				res.redirect('/');
+			}
+			else {
+				req.session.groupID = ID;
+				Log.getMessage(req.session.groupID, 'hub' , function(rows) {
+					res.render('pages/index');
+				});
+			}			
 		});
 	}
 });
@@ -99,6 +108,12 @@ router.post('/hub', function(req, res) {
 		else {
 			res.redirect('/hub');
 		}
+	});
+});
+
+router.post('/group/create', function(req, res) {
+	Group.createGroup(req.body.groupname, req.session.userID, function(success) {
+		res.json(success)
 	});
 });
 

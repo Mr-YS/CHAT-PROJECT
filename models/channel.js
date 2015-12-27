@@ -16,16 +16,18 @@ Channel.createChannel = function(channelname, groupID, callback) {
 	if(channelname.trim().length === 0) {
 		callback(false);
 	}
-	knex('channel').where('groupID', groupID).andWhere('channelname', channelname).then(function(rows) {
-		if(rows.length === 0) {
-			knex('channel').insert({channelname : channelname.trim(), groupID : groupID}).then(function(rows) {
-				callback(true);
-			})
-		}
-		else {
-			callback(false);
-		}
-	});
+	else {
+		knex('channel').where('groupID', groupID).andWhere('channelname', channelname).then(function(rows) {
+			if(rows.length === 0) {
+				knex('channel').insert({channelname : channelname.trim(), groupID : groupID}).then(function(rows) {
+					callback(true);
+				})
+			}
+			else {
+				callback(false);
+			}
+		});
+	}
 }
 
 Channel.channelList = function(groupID, callback) {
