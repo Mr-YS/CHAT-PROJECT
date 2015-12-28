@@ -37,9 +37,12 @@ Group.getID = function(groupname, callback) {
 			callback(-1);
 		}
 		else {
-			callback(rows[0]);
+			callback(rows[0].id);
 		}
-	});	
+	})
+	.catch(function(err) {
+		console.log(err);
+	});
 }
 
 Group.createGroup = function(groupname, userID, callback) {
@@ -53,7 +56,9 @@ Group.createGroup = function(groupname, userID, callback) {
 					channel.createChannel('hub', rows[0], function() {
 						callback(true);
 					})	
-				})
+				}).catch(function(err) {
+					console.log(err);
+				});
 			}
 			else {
 				callback(false);
