@@ -129,5 +129,10 @@ router.get('/channel/list', function(req, res) {
 	});
 });
 
+router.get('/group/getID/:groupname', function(req, res) {
+	Group.getID(req.params.groupname, function(ID) {
+		res.json(ID)
+	})
+});
 module.exports = router;
 
