@@ -17,20 +17,42 @@
 			<div class="collection" id="channel">
   			</div>
 		</div>
-		<div class="col s9">
+		<div class="col s8">
 			<div id ="msgbox">
 			<ul class = "list-group" id="msgs"></ul>
 			</div>
 			<input type = "text" id = "msg" class = "form-control" placeholder="Send Message" />
+		</div>
+		<div class="col s2">
+			<ul class="collection" id="member"></ul>
 		</div>
 		
 		<script type = "text/javascript">
 		 /*	 $(document).ready(function() {
 				$('#list').draggable();
 			}) */
-			var socket = io.connect(':4000');
+			var socket = io.connect(':80');
 			//var socket = io();
 			var channel = 'hub';
+			var userID = '<%=session.userID %>';
+			var username = '<%=session.username %>';
+			var memberList = []; 
+			$.get('/member/list', function(rows) {
+				rows.forEach(function(row) {
+					row.status = false;
+					var flag = false;
+					for(var i = 0; i < memberList.length; ++i) {
+						if(memberList[i].userID === row.userID) {
+							flag = true;
+							break;
+						}
+					}
+					if(!flag) {
+						memberList.push(row);	
+					}
+				});
+				updateMemberList(memberList);
+			});
 			updateChannelList();
 			getMessages();
 			$('.modal-trigger').leanModal();
@@ -69,6 +91,32 @@
 			});
 			socket.on('channelList', function() {
 				updateChannelList();
+			});
+			socket.on('memberList',function(data) {
+				if(data.type == 'connect' || data.type == 'response') {
+					var flag = false;
+					for(var i = 0; i < memberList.length; ++i) {
+						if(memberList[i].userID == data.userID) {
+							memberList[i].status = true;
+							flag = true;
+							break;
+						}
+					}
+					if(!flag) {
+						memberList.push({userID:data.userID, username:data.username, status:true});
+					}
+					if(data.type == 'connect') {
+						socket.emit('memberList', { type: 'response', userID: userID, username: username});
+					}
+				}
+				else if(data.type == 'disconnect') {
+					for(var i = 0; i < memberList.length; ++i) {
+						if(memberList[i].userID == data.userID) {
+							memberList[i].status = false;
+						}
+					}
+				}
+				updateMemberList(memberList);
 			});
 			socket.on('toclient',function(data) {
 				console.log(data.name+' : '+data.msg);
@@ -139,6 +187,18 @@
 						$('#channel').append('<a href="#" class="collection-item" id="'+channel.channelname+'">'+channel.channelname+'<span class="new badge" style="display : none;"></span></a>');
 					})
 				})
+			}
+			
+			function updateMemberList(memberList) {
+				$('#member').html('');
+				memberList.forEach(function(member) {
+					if(member.status === true) {
+						$('#member').append('<li class="collection-item">'+member.username+'</li>');
+					}
+					else {	
+						$('#member').append('<li class="collection-item" style="color:red">'+member.username+'</li>');
+					}
+				});
 			}
 		</script>
 </div>

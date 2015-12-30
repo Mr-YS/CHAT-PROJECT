@@ -9,6 +9,7 @@ var User = require('./models/user.js');
 var Group = require('./models/group.js');
 var Log = require('./models/log.js');
 var Channel = require('./models/channel.js');
+var Member = require('./models/member.js');
 
 var router = express.Router();
 
@@ -61,8 +62,9 @@ router.get('/group/:groupname', function(req,res) {
 			}
 			else {
 				req.session.groupID = ID;
+				Member.joinGroup(req.session.userID, ID);		
 				Log.getMessage(req.session.groupID, 'hub' , function(rows) {
-					res.render('pages/index');
+					res.render('pages/index', { session: req.session });
 				});
 			}			
 		});
@@ -132,6 +134,12 @@ router.get('/channel/list', function(req, res) {
 router.get('/group/getID/:groupname', function(req, res) {
 	Group.getID(req.params.groupname, function(ID) {
 		res.json(ID)
+	})
+});
+
+router.get('/member/list', function(req, res) {
+	Member.memberList(req.session.groupID, function(rows) {
+		res.json(rows)
 	})
 });
 module.exports = router;

@@ -19,7 +19,14 @@ module.exports = function(httpServer, session) {
 			socket.emit('toclient',{name:"SYSTEM",msg:'YOU MUST RELOGIN TO CONTINUE!'})
 		}
 		else {
+			io.sockets.in(groupname).emit('memberList',{type:'connect', userID:userID, username:username});
+			socket.on('memberList', function(data) {
+				if(data.type == 'response') {
+					io.sockets.in(groupname).emit('memberList', data);
+				}
+			});
 			socket.on('disconnect', function(data) {
+				io.sockets.in(groupname).emit('memberList',{type:'disconnect', userID:userID});
 			})
 			socket.on('fromclient',function(data) {
 				console.log(socket.handshake.session);
